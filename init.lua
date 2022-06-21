@@ -9,17 +9,23 @@ set.mouse = 'a'
 set.background = 'dark'
 set.number = true
 set.encoding = 'UTF-8'
+set.relativenumber = true
 
 local Plug = vim.fn['plug#']
 
 vim.call('plug#begin', '~/.config/nvim/autoload/plugged')
-Plug('drewtempelmeyer/palenight.vim')
+-- Plug('drewtempelmeyer/palenight.vim')
+Plug('ellisonleao/gruvbox.nvim')
 Plug('preservim/nerdtree')
 Plug('ryanoasis/vim-devicons')
 Plug('neovim/nvim-lspconfig')
 Plug('williamboman/nvim-lsp-installer')
 Plug('nvim-treesitter/nvim-treesitter')
+Plug('alvan/vim-closetag')
+Plug('jiangmiao/auto-pairs')
+Plug('tpope/vim-surround')
 
+-- stuff for autocomplete/tree sitter/lsp
 Plug('hrsh7th/cmp-nvim-lsp')
 Plug('hrsh7th/cmp-buffer')
 Plug('hrsh7th/cmp-path')
@@ -30,13 +36,19 @@ Plug('hrsh7th/vim-vsnip')
 Plug('saadparwaiz1/cmp_luasnip') -- Snippets source for nvim-cmp
 Plug('L3MON4D3/LuaSnip') -- Snippets plugink
 
+Plug('preservim/tagbar')
+
+Plug('nvim-lua/plenary.nvim')
+Plug('nvim-telescope/telescope.nvim')
+Plug('tpope/vim-commentary')
+Plug('itchyny/lightline.vim')
 
 vim.call('plug#end')
 
 -- treesitter
-require'nvim-treesitter.configs'.setup {
+require('nvim-treesitter.configs').setup {
   -- A list of parser names, or "all"
-  ensure_installed = { "javascript", "cpp", "c", "typescript" },
+  ensure_installed = {"javascript", "rst", "cpp", "c", "html", "typescript" },
 
   highlight = {
     enable = true,
@@ -67,16 +79,31 @@ local on_attach = function(client, bufnr)
   vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>ca', '<cmd>lua vim.lsp.buf.code_action()<CR>', opts)
   vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gr', '<cmd>lua vim.lsp.buf.references()<CR>', opts)
   vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>f', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
+  vim.api.nvim_set_keymap('n', '<space>e', '<cmd>lua vim.diagnostic.open_float()<CR>', opts)
 end
 
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities)
 
-local servers = { 'pyright', 'tsserver', 'html', 'jsonls', 'clangd' }
+local servers = { 'rust_analyzer', 'pyright', 'tsserver', 'clangd'}
 for _, lsp in pairs(servers) do
   require('lspconfig')[lsp].setup {
     on_attach = on_attach,
     capabilities = capabilities,
+    settings = {
+        ["rust-analyzer"] = {
+            assist = {
+                importGranularity = "module",
+                importPrefix = "self",
+            },
+            cargo = {
+                loadOutDirsFromCheck = true
+            },
+            procMacro = {
+                enable = true
+            },
+        }
+    }
   }
 end
 
@@ -125,13 +152,13 @@ cmp.setup {
 }
 
 vim.cmd([[
-autocmd BufRead * colorscheme palenight | let g:lightline = { 'colorscheme': 'palenight' }
-colorscheme palenight
+" closing tags
+let g:closetag_filenames = '*x.html,*.jsx,*.tsx'
+
+colorscheme gruvbox 
 
 set guifont=Fira_Code\ Regular:h18
-if (has("termguicolors"))
-    set termguicolors
-endif
+set termguicolors
 
 inoremap kj <Esc>
 filetype on
@@ -142,11 +169,25 @@ if has("syntax")
 endif
 
 " cursor shape (VIM ONLY?)
-let &t_SI = "\e[3 q"
-let &t_EI = "\e[2 q"
+" let &t_SI = "\e[3 q"
+" let &t_EI = "\e[2 q"
 
-map <C-n> :NERDTreeToggle<CR>
+map <C-n> :NERDTreeToggle<CR> 
 
 autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
 
+hi Normal guibg=NONE ctermbg=NONE
+
+" tagbar
+nnoremap <silent> <Space>a :Tagbar fc<CR>
+
+" telescope
+nnoremap <silent> ff :Telescope find_files<CR>
+" lightline
+set noshowmode
+
+let g:lightline = {
+  \ 'colorscheme': 'gruvbox',
+  \ }
 ]])
+
